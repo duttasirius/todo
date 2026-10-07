@@ -1,19 +1,33 @@
 import { useAppDispatch } from "../store/hooks";
-import { logout } from "../store/authSlice";
+import { logoutApi } from "../services/logoutApi";
+import { setAuthError, setAuthLoading, setUser } from "../store/authSlice";
 import type { User } from "../types";
 
-interface NavbarProps { user: User; }
+interface NavbarProps {
+  user: User;
+}
 
 const Logo = () => (
-  <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-black text-white shadow-lg shadow-slate-900/10">T</span>
+  <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-900 text-sm font-black text-white shadow-lg shadow-slate-900/10">
+    T
+  </span>
 );
 
 export default function Navbar({ user }: NavbarProps) {
   const dispatch = useAppDispatch();
 
   const handleLogout = async () => {
-    const result = await dispatch(logout());
-    if (logout.fulfilled.match(result)) window.location.assign("/login.html");
+    dispatch(setAuthLoading(true));
+
+    try {
+      await logoutApi();
+      dispatch(setUser(null));
+      window.location.assign("/login.html");
+    } catch (error) {
+      dispatch(
+        setAuthError(error instanceof Error ? error.message : "Logout failed"),
+      );
+    }
   };
 
   return (
@@ -33,7 +47,9 @@ export default function Navbar({ user }: NavbarProps) {
             <p className="text-xs font-semibold text-slate-400">Signed in as</p>
             <p className="max-w-36 truncate text-sm font-bold text-slate-800">{user.name}</p>
           </div>
-          <button onClick={() => void handleLogout()} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">Logout</button>
+          <button onClick={() => void handleLogout()} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+            Logout
+          </button>
         </div>
       </div>
       <div className="mx-auto block w-[min(1180px,calc(100%-32px))] pb-3 sm:hidden">
