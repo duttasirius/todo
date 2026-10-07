@@ -1,141 +1,41 @@
+import { motion } from "framer-motion";
 import type { Todo } from "../types";
-import { useState } from "react";
-import type { FormEvent } from "react";
 
 interface TodoCardProps {
   todo: Todo;
-  onToggle: (todo: Todo) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: { title?: string; description?: string; priority?: Todo["priority"]; dueDate?: string }) => Promise<void>;
+  onToggle: (todo: Todo) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function TodoCard({
-  todo,
-  onToggle,
-  onDelete,
-  onUpdate,
-}: TodoCardProps) {
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(todo.title);
-  const [description, setDescription] = useState(todo.description || "");
-  const [priority, setPriority] = useState(todo.priority);
-  const [dueDate, setDueDate] = useState(todo.dueDate ? todo.dueDate.slice(0, 10) : "");
+const priorityClass = {
+  high: "bg-rose-50 text-rose-700 ring-rose-200",
+  medium: "bg-amber-50 text-amber-700 ring-amber-200",
+  low: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+} as const;
 
-  const save = async (event: FormEvent) => {
-    event.preventDefault();
-
-    await onUpdate(todo._id, {
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      dueDate: dueDate || undefined,
-    });
-
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <article className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
-        <form className="space-y-4" onSubmit={save}>
-          <input
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold outline-none focus:border-indigo-500"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            maxLength={200}
-            required
-          />
-          <textarea
-            className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            maxLength={2000}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <select
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500"
-              value={priority}
-              onChange={(event) => setPriority(event.target.value as Todo["priority"])}
-            >
-              <option value="low">Low priority</option>
-              <option value="medium">Medium priority</option>
-              <option value="high">High priority</option>
-            </select>
-            <input
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500"
-              type="date"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
-              Save changes
-            </button>
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-              onClick={() => setEditing(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </article>
-    );
-  }
-
+export default function TodoCard({ todo, onToggle, onDelete }: TodoCardProps) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <a href={`/todo.html?id=${todo._id}`} className="block">
-            <h2 className={`text-lg font-bold ${todo.completed ? "text-slate-400 line-through" : "text-slate-900"}`}>
-              {todo.title}
-            </h2>
-          </a>
-
-          {todo.description && (
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{todo.description}</p>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${todo.priority === "high" ? "bg-red-50 text-red-700" : todo.priority === "medium" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
-              {todo.priority}
-            </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-              {todo.completed ? "Completed" : "Active"}
-            </span>
-            {todo.dueDate && (
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                Due {new Date(todo.dueDate).toLocaleDateString()}
-              </span>
-            )}
+    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-xl hover:shadow-slate-200/60">
+      <div className="flex items-start gap-4">
+        <button aria-label={todo.completed ? "Mark todo active" : "Mark todo completed"} onClick={() => onToggle(todo)} className={`mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${todo.completed ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white hover:border-slate-900"}`}>
+          {todo.completed ? "✓" : ""}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ring-1 ${priorityClass[todo.priority]}`}>{todo.priority}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{todo.completed ? "Completed" : "Active"}</span>
+          </div>
+          <h2 className={`mt-3 truncate text-lg font-black tracking-tight ${todo.completed ? "text-slate-400 line-through" : "text-slate-900"}`}>{todo.title}</h2>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{todo.description || "No description added."}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
+            <span>{todo.dueDate ? `Due ${new Date(todo.dueDate).toLocaleDateString()}` : "No due date"}</span><span>•</span><span>Updated {new Date(todo.updatedAt).toLocaleDateString()}</span>
           </div>
         </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            onClick={() => void onToggle(todo)}
-          >
-            {todo.completed ? "Reopen" : "Complete"}
-          </button>
-          <button
-            className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
-            onClick={() => setEditing(true)}
-          >
-            Edit
-          </button>
-          <button
-            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
-            onClick={() => void onDelete(todo._id)}
-          >
-            Delete
-          </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <a href={`/todo.html?id=${encodeURIComponent(todo._id)}`} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">View</a>
+          <button onClick={() => onDelete(todo._id)} className="rounded-xl border border-transparent px-3 py-2 text-sm font-bold text-rose-600 transition hover:border-rose-200 hover:bg-rose-50">Delete</button>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
