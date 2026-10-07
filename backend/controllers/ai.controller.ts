@@ -73,60 +73,103 @@ User request:
 ${prompt}`;
 
   try {
-    const response = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: instruction,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              title: {
-                type: "STRING",
-              },
-              description: {
-                type: "STRING",
-              },
-              priority: {
-                type: "STRING",
-                enum: ["low", "medium", "high"],
-              },
-              dueDate: {
-                type: "STRING",
-              },
+    const requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: instruction,
             },
-            required: ["title", "description", "priority", "dueDate"],
-          },
+          ],
         },
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            title: {
+              type: "STRING",
+            },
+            description: {
+              type: "STRING",
+            },
+            priority: {
+              type: "STRING",
+              enum: ["low", "medium", "high"],
+            },
+            dueDate: {
+              type: "STRING",
+            },
+          },
+          required: ["title", "description", "priority", "dueDate"],
+        },
+      },
+    };
 
-    if (!response.ok) {
-      const errorBody = await response.text();
+    const maxAttempts = 3;
+    const requestTimeoutMs = 45_000;
+    let response: Response | null = null;
 
-      console.error("Gemini request failed:", response.status, errorBody);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        response = await fetch(GEMINI_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify(requestBody),
+          signal: AbortSignal.timeout(requestTimeoutMs),
+        });
 
-      return res.status(502).json({
+        if (response.ok) break;
+
+        const errorBody = await response.text();
+
+        console.error(
+          `Gemini request failed (attempt ${attempt}/${maxAttempts}):`,
+          response.status,
+          errorBody,
+        );
+
+        const shouldRetry = [408, 429, 500, 502, 503, 504].includes(response.status);
+
+        if (!shouldRetry || attempt === maxAttempts) break;
+
+        const delayMs = 1000 * 2 ** (attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      } catch (error) {
+        const isTimeout =
+          error instanceof DOMException && error.name === "TimeoutError";
+
+        if (!isTimeout || attempt === maxAttempts) {
+          throw error;
+        }
+
+        console.error(
+          `Gemini request timed out (attempt ${attempt}/${maxAttempts}). Retrying...`,
+        );
+
+        const delayMs = 1000 * 2 ** (attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+
+    if (!response) {
+      return res.status(504).json({
         success: false,
-        message: "Gemini could not generate the task right now.",
+        message: "Gemini timed out. Please try again.",
       });
     }
 
+    if (!response.ok) {
+      return res.status(502).json({
+        success: false,
+        message: "Gemini could not generate the task right now. Please try again.",
+      });
+    }
     const result = await response.json();
 
     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
