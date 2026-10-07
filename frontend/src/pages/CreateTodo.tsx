@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import TodoForm from "../components/TodoForm";
-import { createTodoApi } from "../services/createTodoApi";
-import { getCurrentUserApi } from "../services/getCurrentUserApi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setAuthLoading, setUser } from "../store/authSlice";
 import { addTodo, setTodoError } from "../store/todoSlice";
 import type { CreateTodoInput } from "../types";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function CreateTodoPage() {
   const dispatch = useAppDispatch();
@@ -23,8 +24,11 @@ export default function CreateTodoPage() {
       dispatch(setAuthLoading(true));
 
       try {
-        const response = await getCurrentUserApi();
-        if (active) dispatch(setUser(response.data));
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          withCredentials: true,
+        });
+
+        if (active) dispatch(setUser(response.data.data));
       } catch {
         if (active) {
           dispatch(setAuthLoading(false));
@@ -46,13 +50,20 @@ export default function CreateTodoPage() {
 
   const handleCreate = async (payload: CreateTodoInput) => {
     try {
-      const response = await createTodoApi(payload);
-      dispatch(addTodo(response.data));
+      const response = await axios.post(
+        `${API_URL}/api/todos`,
+        payload,
+        { withCredentials: true },
+      );
+
+      dispatch(addTodo(response.data.data));
       setCreated(true);
       window.setTimeout(() => window.location.assign("/"), 450);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not create todo";
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Could not create todo"
+        : "Could not create todo";
+
       dispatch(setTodoError(message));
       throw new Error(message);
     }
