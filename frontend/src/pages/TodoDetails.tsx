@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
-import { deleteTodoApi } from "../services/deleteTodoApi";
-import { getCurrentUserApi } from "../services/getCurrentUserApi";
-import { getTodoApi } from "../services/getTodoApi";
-import { updateTodoApi } from "../services/updateTodoApi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setAuthLoading, setUser } from "../store/authSlice";
 import {
@@ -16,6 +13,8 @@ import {
   setTodoError,
 } from "../store/todoSlice";
 import type { Todo } from "../types";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const priorityClass = {
   high: "bg-rose-50 text-rose-700 ring-rose-200",
@@ -44,8 +43,11 @@ export default function TodoDetails() {
       dispatch(setAuthLoading(true));
 
       try {
-        const response = await getCurrentUserApi();
-        if (active) dispatch(setUser(response.data));
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          withCredentials: true,
+        });
+
+        if (active) dispatch(setUser(response.data.data));
       } catch {
         if (active) {
           dispatch(setAuthLoading(false));
@@ -74,15 +76,18 @@ export default function TodoDetails() {
       dispatch(setDetailLoading(true));
 
       try {
-        const response = await getTodoApi(id);
-        if (active) dispatch(setSelectedTodo(response.data));
+        const response = await axios.get(`${API_URL}/api/todos/${id}`, {
+          withCredentials: true,
+        });
+
+        if (active) dispatch(setSelectedTodo(response.data.data));
       } catch (error) {
         if (active) {
-          dispatch(
-            setTodoError(
-              error instanceof Error ? error.message : "Could not load todo",
-            ),
-          );
+          const message = axios.isAxiosError(error)
+            ? error.response?.data?.message || "Could not load todo"
+            : "Could not load todo";
+
+          dispatch(setTodoError(message));
         }
       }
     };
@@ -117,21 +122,25 @@ export default function TodoDetails() {
     setSaving(true);
 
     try {
-      const response = await updateTodoApi(todo._id, {
-        title: title.trim(),
-        description,
-        priority,
-        dueDate: dueDate || undefined,
-      });
+      const response = await axios.patch(
+        `${API_URL}/api/todos/${todo._id}`,
+        {
+          title: title.trim(),
+          description,
+          priority,
+          dueDate: dueDate || undefined,
+        },
+        { withCredentials: true },
+      );
 
-      dispatch(replaceTodo(response.data));
+      dispatch(replaceTodo(response.data.data));
       setEditing(false);
     } catch (error) {
-      dispatch(
-        setTodoError(
-          error instanceof Error ? error.message : "Could not update todo",
-        ),
-      );
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Could not update todo"
+        : "Could not update todo";
+
+      dispatch(setTodoError(message));
     } finally {
       setSaving(false);
     }
@@ -141,16 +150,19 @@ export default function TodoDetails() {
     if (!todo) return;
 
     try {
-      const response = await updateTodoApi(todo._id, {
-        completed: !todo.completed,
-      });
-      dispatch(replaceTodo(response.data));
-    } catch (error) {
-      dispatch(
-        setTodoError(
-          error instanceof Error ? error.message : "Could not update todo",
-        ),
+      const response = await axios.patch(
+        `${API_URL}/api/todos/${todo._id}`,
+        { completed: !todo.completed },
+        { withCredentials: true },
       );
+
+      dispatch(replaceTodo(response.data.data));
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Could not update todo"
+        : "Could not update todo";
+
+      dispatch(setTodoError(message));
     }
   };
 
@@ -158,15 +170,18 @@ export default function TodoDetails() {
     if (!todo || !window.confirm("Delete this todo?")) return;
 
     try {
-      await deleteTodoApi(todo._id);
+      await axios.delete(`${API_URL}/api/todos/${todo._id}`, {
+        withCredentials: true,
+      });
+
       dispatch(removeTodo(todo._id));
       window.location.assign("/");
     } catch (error) {
-      dispatch(
-        setTodoError(
-          error instanceof Error ? error.message : "Could not delete todo",
-        ),
-      );
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Could not delete todo"
+        : "Could not delete todo";
+
+      dispatch(setTodoError(message));
     }
   };
 
