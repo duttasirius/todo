@@ -14,6 +14,7 @@ export const registerUser = async ({ name, email, password }: RegisterData) => {
     name: name.trim(),
     email: normalizedEmail,
     password: hashedPassword,
+    authProvider: "local",
   });
 };
 
@@ -21,7 +22,7 @@ export const loginUser = async ({ email, password }: LoginData) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   const user = await User.findOne({ email: normalizedEmail }).select("+password");
-  if (!user) throw new Error("Invalid email or password");
+  if (!user || !user.password) throw new Error("Invalid email or password");
 
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid email or password");

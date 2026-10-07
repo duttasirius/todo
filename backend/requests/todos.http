@@ -1,6 +1,7 @@
 @baseUrl = http://localhost:8000/api
 @email = postman-demo-{{$timestamp}}@example.com
 @password = Password123!
+@firebaseIdToken = REPLACE_WITH_FIREBASE_ID_TOKEN
 @todoId = REPLACE_WITH_TODO_ID
 
 ### Health Check
@@ -25,6 +26,15 @@ Content-Type: application/json
 {
   "email": "{{email}}",
   "password": "{{password}}"
+}
+
+
+### Google Login
+POST {{baseUrl}}/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "{{firebaseIdToken}}"
 }
 
 

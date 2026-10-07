@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { User } from "../models/user.model.js";
+import { loginWithGoogle } from "../services/google-auth.service.js";
 import { loginUser, registerUser } from "../services/auth.service.js";
 import { generateToken } from "../utils/generate-token.js";
 import {
@@ -82,6 +83,37 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const googleLogin = async (req: Request, res: Response) => {
+  const idToken = String(req.body?.idToken || "").trim();
+
+  if (!idToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Firebase ID token is required",
+    });
+  }
+
+  try {
+    const user = await loginWithGoogle(idToken);
+    const token = generateToken(user._id.toString());
+
+    setAuthCookie(res, token);
+
+    return res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      data: { id: user._id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    console.error("Google authentication:", error);
+
+    return res.status(401).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Google authentication failed",
+    });
+  }
+};
+
 export const logout = (_req: Request, res: Response) => {
   res.clearCookie("token");
   return res.status(200).json({ success: true, message: "Logout successful" });
@@ -99,7 +131,6 @@ export const getMe = async (_req: Request, res: Response) => {
     data: { id: user._id, name: user.name, email: user.email },
   });
 };
-
 
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const email = String(req.body?.email || "").trim().toLowerCase();

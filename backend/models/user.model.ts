@@ -3,7 +3,9 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string | undefined;
+  firebaseUid?: string | undefined;
+  authProvider: "local" | "google";
   createdAt: Date;
   updatedAt: Date;
   passwordResetOtpHash?: string | undefined;
@@ -31,9 +33,21 @@ const userSchema = new Schema<IUser>(
 
     password: {
       type: String,
-      required: true,
       minlength: 6,
       select: false,
+    },
+
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
 
     passwordResetOtpHash: {

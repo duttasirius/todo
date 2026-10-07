@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
+import { getIdToken, signInWithPopup, signOut } from "firebase/auth";
 import { motion } from "framer-motion";
 import AuthShell from "../components/AuthShell";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import { auth, provider } from "../../utils/firebase";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   clearAuthError,
@@ -69,6 +72,43 @@ export default function Register() {
       const message = axios.isAxiosError(error)
         ? error.response?.data?.message || "Registration failed"
         : "Registration failed";
+
+      dispatch(setAuthError(message));
+    }
+  };
+
+  const registerWithGoogle = async () => {
+    dispatch(clearAuthError());
+    dispatch(setAuthLoading(true));
+
+    try {
+      const credential = await signInWithPopup(auth, provider);
+      const idToken = await getIdToken(credential.user, true);
+
+      const response = await axios.post(
+        `${API_URL}/api/auth/google`,
+        { idToken },
+        { withCredentials: true },
+      );
+
+      dispatch(setUser(response.data.data));
+      window.location.assign("/");
+    } catch (error) {
+      const firebaseCode =
+        typeof error === "object" && error !== null && "code" in error
+          ? String(error.code)
+          : "";
+
+      if (firebaseCode === "auth/popup-closed-by-user") {
+        dispatch(setAuthLoading(false));
+        return;
+      }
+
+      await signOut(auth).catch(() => undefined);
+
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Google registration failed"
+        : "Google registration failed";
 
       dispatch(setAuthError(message));
     }
@@ -142,6 +182,7 @@ export default function Register() {
         </label>
 
         <motion.button
+          type="submit"
           whileTap={{ scale: 0.99 }}
           disabled={loading || !initialized}
           className="w-full rounded-2xl bg-white px-4 py-3.5 text-sm font-black text-slate-950 shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -149,6 +190,18 @@ export default function Register() {
           {loading ? "Creating account..." : "Create account"}
         </motion.button>
       </form>
+
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-white/10" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">or</span>
+        <div className="h-px flex-1 bg-white/10" />
+      </div>
+
+      <GoogleAuthButton
+        onClick={() => void registerWithGoogle()}
+        loading={loading || !initialized}
+        label="Continue with Google"
+      />
     </AuthShell>
   );
 }

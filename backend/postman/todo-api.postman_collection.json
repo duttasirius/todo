@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Todo API",
-    "description": "Postman collection for the Ziptrrip Todo technical assignment. Covers health, authentication, CRUD APIs, validation, and error cases.",
+    "description": "Postman collection for the Ziptrrip Todo technical assignment. Covers health, authentication, CRUD APIs, validation, Google authentication, and error cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -20,6 +20,10 @@
     {
       "key": "todoId",
       "value": ""
+    },
+    {
+      "key": "firebaseIdToken",
+      "value": "REPLACE_WITH_FIREBASE_ID_TOKEN"
     }
   ],
   "item": [
@@ -113,6 +117,35 @@
                 "exec": [
                   "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
                   "pm.test('Login successful', function () { pm.expect(pm.response.json().success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"{{firebaseIdToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/google"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Google login successful', function () { pm.expect(pm.response.json().success).to.eql(true); });"
                 ]
               }
             }
