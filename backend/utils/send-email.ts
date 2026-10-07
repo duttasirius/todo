@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 
 const createTransporter = () => {
   const user = process.env.USER_EMAIL;
-  const pass = process.env.USER_PASSWORD;
+  const pass = process.env.USER_PASSWORD?.replace(/\s+/g, "");
 
   if (!user || !pass) {
     throw new Error("USER_EMAIL and USER_PASSWORD are required for email sending");
@@ -28,6 +28,8 @@ export const sendPasswordResetOtp = async (
   }
 
   const transporter = createTransporter();
+
+  await transporter.verify();
 
   await transporter.sendMail({
     from,
