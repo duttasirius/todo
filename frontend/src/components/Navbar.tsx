@@ -1,7 +1,9 @@
+import axios from "axios";
 import { useAppDispatch } from "../store/hooks";
-import { logoutApi } from "../services/logoutApi";
 import { setAuthError, setAuthLoading, setUser } from "../store/authSlice";
 import type { User } from "../types";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 interface NavbarProps {
   user: User;
@@ -20,13 +22,20 @@ export default function Navbar({ user }: NavbarProps) {
     dispatch(setAuthLoading(true));
 
     try {
-      await logoutApi();
+      await axios.post(
+        `${API_URL}/api/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
+
       dispatch(setUser(null));
       window.location.assign("/login.html");
     } catch (error) {
-      dispatch(
-        setAuthError(error instanceof Error ? error.message : "Logout failed"),
-      );
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Logout failed"
+        : "Logout failed";
+
+      dispatch(setAuthError(message));
     }
   };
 
