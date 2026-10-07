@@ -62,7 +62,7 @@ export const resetPassword = async (
   password: string,
 ): Promise<void> => {
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email: normalizedEmail }).select("+password +passwordResetVerified");
 
   if (!user || !user.passwordResetVerified) {
     throw new Error("Reset code verification is required");
