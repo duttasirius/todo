@@ -110,7 +110,7 @@ ${prompt}`;
 
     const maxAttempts = 3;
     const requestTimeoutMs = 45_000;
-    let response: Response | null = null;
+    let response: globalThis.Response | null = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
