@@ -15,10 +15,11 @@ describe("generateToken", () => {
   });
 
   it("creates a valid JWT containing the user id", () => {
-    process.env.JWT_SECRET = "unit-test-secret";
+    const testSecret = "unit-test-secret";
+    process.env.JWT_SECRET = testSecret;
 
     const token = generateToken("user-123");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, testSecret);
 
     expect(decoded).toHaveProperty("userId", "user-123");
   });
