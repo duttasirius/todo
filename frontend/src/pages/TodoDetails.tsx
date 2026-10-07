@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import { checkAuth } from "../store/authSlice";
@@ -47,7 +48,7 @@ export default function TodoDetails() {
 
   const completionLabel = useMemo(() => todo?.completed ? "Completed" : "In progress", [todo]);
 
-  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+  const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!todo) return;
     setSaving(true);
