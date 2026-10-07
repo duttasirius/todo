@@ -6,6 +6,9 @@ export interface IUser extends Document {
   password: string;
   createdAt: Date;
   updatedAt: Date;
+  passwordResetOtpHash?: string;
+  passwordResetOtpExpiresAt?: Date;
+  passwordResetVerified: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -31,6 +34,21 @@ const userSchema = new Schema<IUser>(
       required: true,
       minlength: 6,
       select: false,
+    },
+
+    passwordResetOtpHash: {
+      type: String,
+      select: false,
+    },
+
+    passwordResetOtpExpiresAt: {
+      type: Date,
+      select: false,
+    },
+
+    passwordResetVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   {
