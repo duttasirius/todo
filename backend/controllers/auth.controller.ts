@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { User } from "../models/user.model.js";
 import { loginUser, registerUser } from "../services/auth.service.js";
 import { generateToken } from "../utils/generate-token.js";
 
