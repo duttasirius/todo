@@ -41,7 +41,7 @@ export const verifyPasswordResetOtp = async (
   otp: string,
 ): Promise<void> => {
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail });
+  const user = await User.findOne({ email: normalizedEmail }).select("+passwordResetOtpHash +passwordResetOtpExpiresAt +passwordResetVerified");
 
   if (
     !user ||
