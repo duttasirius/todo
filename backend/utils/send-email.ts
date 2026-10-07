@@ -21,7 +21,7 @@ export const sendPasswordResetOtp = async (
   to: string,
   otp: string,
 ): Promise<void> => {
-  const from = process.env.USER_EMAIL;
+  const from = process.env.EMAIL;
 
   if (!from) {
     throw new Error("EMAIL is not configured");
