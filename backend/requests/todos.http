@@ -1,0 +1,95 @@
+@baseUrl = http://localhost:8000/api
+@email = postman-demo-{{$timestamp}}@example.com
+@password = Password123!
+@todoId = REPLACE_WITH_TODO_ID
+
+### Health Check
+GET {{baseUrl}}/health
+
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Postman User",
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+
+### Get Current User
+GET {{baseUrl}}/auth/me
+
+
+### Create Todo
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "title": "Test Todo",
+  "description": "Created from REST Client",
+  "completed": false,
+  "priority": "high"
+}
+
+
+### Get All Todos
+GET {{baseUrl}}/todos
+
+
+### Get Todo By ID
+GET {{baseUrl}}/todos/{{todoId}}
+
+
+### Update Todo
+PATCH {{baseUrl}}/todos/{{todoId}}
+Content-Type: application/json
+
+{
+  "title": "Updated Todo",
+  "completed": true,
+  "priority": "medium"
+}
+
+
+### Delete Todo
+DELETE {{baseUrl}}/todos/{{todoId}}
+
+
+### Logout
+POST {{baseUrl}}/auth/logout
+
+
+### Validation - Register Missing Fields
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "",
+  "password": ""
+}
+
+
+### Validation - Todo Missing Title
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+
+### Error - Invalid Todo ID
+GET {{baseUrl}}/todos/not-a-valid-id
