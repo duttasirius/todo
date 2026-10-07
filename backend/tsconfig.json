@@ -2,18 +2,14 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./dist",
-
     "module": "nodenext",
     "target": "esnext",
     "types": ["node"],
-
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-
     "strict": true,
     "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
@@ -24,5 +20,5 @@
     "noEmitOnError": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "tests"]
 }

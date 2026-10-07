@@ -2,75 +2,139 @@
 
 A TypeScript Todo application with an Express/MongoDB backend and a React/Vite multi-page frontend.
 
+## Assignment alignment
+
+The assignment asks for a React Multiple Page Application, a todo list page, a todo detail page using a todo-id query parameter, a JavaScript/TypeScript backend with CRUD APIs, repository documentation, and—when applying as a backend developer—unit tests plus Postman/REST Client files. The repository implements all of those requirements.
+
 ## Stack
 
-- Frontend: React, TypeScript, Vite, Redux Toolkit, Tailwind CSS, Framer Motion
-- Backend: Node.js, Express, TypeScript, MongoDB, JWT, Redis-ready configuration
-- API testing: Postman collection + VS Code REST Client requests
+- Frontend: React, TypeScript, Vite, Redux Toolkit, Tailwind CSS, Framer Motion, Firebase Authentication
+- Backend: Node.js 22, Express 5, TypeScript, MongoDB/Mongoose, JWT HttpOnly cookies, Firebase Admin, Nodemailer, Redis-ready configuration
+- AI: Gemini-based todo generation
+- Testing: Vitest
+- API clients: Postman collection + VS Code REST Client
+- CI: GitHub Actions builds frontend/backend and runs backend unit tests
 
 ## Frontend MPA
 
-The frontend intentionally uses multiple HTML entry points instead of a client-side SPA router, matching the assignment requirement.
+The frontend intentionally uses separate HTML entry points instead of a client-side SPA router.
 
-| Page | Entry | API responsibility |
+| Page | Entry | Purpose |
 | --- | --- | --- |
-| Login | `/login.html` | `POST /api/auth/login` |
-| Register | `/register.html` | `POST /api/auth/register` |
-| Todo list | `/` | `GET /api/todos`, update/delete |
-| Create todo | `/create.html` | `POST /api/todos` |
-| Todo details | `/todo.html?id=<todoId>` | `GET/PATCH/DELETE /api/todos/:id` |
+| Todo list | /index.html | Authenticated todo list, filtering, sorting and CRUD actions |
+| Login | /login.html | Email/password and Google sign-in |
+| Register | /register.html | Email/password and Google registration |
+| Create todo | /create.html | Create a todo manually or with AI |
+| Todo details | /todo.html?id=<todoId> | View/update/delete one todo using the required query parameter |
+| Forgot password | /forgot-password.html | Email OTP verification and password reset |
 
-Each page mounts its own React entry and shares API/state modules through Redux Toolkit.
+## Backend organization
 
-## Environment
+Business logic is separated from transport concerns:
 
-Create `backend/.env`:
+- controllers/ — HTTP handlers
+- routes/ — endpoint definitions
+- services/ — authentication, todo, password reset and Google auth business logic
+- models/ — MongoDB schemas
+- middleware/ — JWT protection
+- utils/ — JWT, email and Firebase Admin integration
+- validators/ — reusable validation
+- tests/ — unit tests
+- postman/ and requests/ — API testing resources
 
-```env
-PORT=8000
-NODE_ENV=development
-MONGODB_URL=mongodb+srv://<username>:<password>@<cluster>/<database>
-JWT_SECRET=replace-with-a-long-random-secret
-REDIS_URL=redis://localhost:6379
-```
+Compiled TypeScript output is written only to backend/dist/.
 
-Create `frontend/.env`:
+## Authentication
 
-```env
-VITE_API_URL=http://localhost:8000
-```
+### Email/password
 
-Never commit real secrets. Use the provided `.env.example` files.
+Registration and login create a JWT stored in an HttpOnly cookie. Protected todo APIs use that cookie.
 
-## Run locally
+### Google
+
+The frontend authenticates with Firebase Google Sign-In and sends the Firebase ID token to POST /api/auth/google. The backend verifies the token with Firebase Admin, finds or creates the MongoDB user, then issues the application's JWT cookie.
+
+### Password reset
+
+The forgot-password flow generates a six-digit OTP, stores only a hash and expiry in MongoDB, sends the code through Gmail SMTP, verifies the code, then allows a password change.
+
+## Todo features
+
+- Create, read, update and delete todos
+- Completion state
+- Priority
+- Due dates
+- Search
+- Status filtering
+- Priority filtering
+- Sorting
+- Todo details page
+- Pagination
+- AI-assisted todo creation
+
+## API testing
+
+Postman: backend/postman/todo-api.postman_collection.json
+
+REST Client: backend/requests/todos.http
+
+The API resources cover authentication, Google login, password reset, todo CRUD, validation/error cases, logout and AI todo generation.
+
+## Local setup
+
+Create backend/.env and frontend/.env from the provided examples. Keep all secrets out of Git.
+
+Backend:
 
 ```bash
 cd backend
-npm install
+npm ci
 npm run dev
 ```
 
-In another terminal:
+Frontend, in another terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-## API flow
+Build verification:
 
-1. Register a user.
-2. Login; the backend stores the JWT in an HTTP-only cookie.
-3. The authenticated pages call `/api/auth/me` to restore the session.
-4. Todo pages call the Todo CRUD APIs with credentials included.
-5. The Todo details page reads the required `id` query parameter.
+```bash
+cd backend
+npm run build
+npm test
 
-## API testing files
+cd ../frontend
+npm run build
+```
 
-- `backend/postman/todo-api.postman_collection.json`
-- `backend/requests/todos.http`
+## CI
 
-## Verification
+Every push or pull request to development runs:
 
-The GitHub Actions workflow builds both applications on pushes and pull requests to `development`.
+- backend npm ci
+- backend TypeScript build
+- backend Vitest unit tests
+- frontend npm ci
+- frontend production build
+
+## Environment variables
+
+Backend uses:
+
+- MONGODB_URL
+- JWT_SECRET
+- REDIS_URL
+- EMAIL
+- EMAIL_PASS
+- GEMINI_API_KEY
+- FIREBASE_PROJECT_ID
+- FIREBASE_CLIENT_EMAIL
+- FIREBASE_PRIVATE_KEY
+
+Frontend uses the Vite API/Firebase variables from frontend/.env.example.
+
+Never commit .env files, Firebase private keys, MongoDB credentials or other secrets.
