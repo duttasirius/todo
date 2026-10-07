@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { motion } from "framer-motion";
+import AuthShell from "../components/AuthShell";
 import { checkAuth, clearAuthError, login } from "../store/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -10,86 +12,46 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    if (!initialized) {
-      void dispatch(checkAuth());
-    }
+    if (!initialized) void dispatch(checkAuth());
   }, [dispatch, initialized]);
 
   useEffect(() => {
-    if (user) window.location.href = "/";
+    if (user) window.location.assign("/");
   }, [user]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     dispatch(clearAuthError());
     const result = await dispatch(login({ email, password }));
-    if (login.fulfilled.match(result)) {
-      window.location.href = "/";
-    }
+    if (login.fulfilled.match(result)) window.location.assign("/");
   };
 
-  if (user) return null;
-
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-md place-items-center">
-        <section className="w-full rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur">
-          <div className="mb-8">
-            <a href="/" className="text-sm font-semibold text-indigo-300">← Todo</a>
-            <h1 className="mt-5 text-3xl font-bold tracking-tight">Welcome back</h1>
-            <p className="mt-2 text-sm text-slate-300">Sign in to manage your tasks.</p>
-          </div>
+    <AuthShell
+      eyebrow="Welcome back"
+      title="Sign in and get moving."
+      subtitle="Your tasks are waiting. Pick up exactly where you left off."
+      footer={
+        <span>
+          New here? <a href="/register.html" className="font-bold text-white hover:text-indigo-300">Create an account →</a>
+        </span>
+      }
+    >
+      {error && <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-200">{error}</div>}
 
-          <form className="space-y-5" onSubmit={submit}>
-            {error && (
-              <div className="rounded-xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="mb-2 block text-sm font-medium" htmlFor="email">Email</label>
-              <input
-                className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 outline-none transition focus:border-indigo-400"
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium" htmlFor="password">Password</label>
-              <input
-                className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 outline-none transition focus:border-indigo-400"
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                minLength={6}
-                required
-              />
-            </div>
-
-            <button
-              className="w-full rounded-xl bg-indigo-500 px-4 py-3 font-semibold transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={loading || !initialized}
-            >
-              {loading ? "Signing in..." : "Login"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-300">
-            Don't have an account?{" "}
-            <a className="font-semibold text-indigo-300 hover:text-indigo-200" href="/register.html">
-              Create one
-            </a>
-          </p>
-        </section>
-      </div>
-    </main>
+      <form onSubmit={submit} className="space-y-4">
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Email</span>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" required placeholder="you@example.com" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm font-semibold outline-none transition placeholder:text-slate-600 focus:border-indigo-400/60 focus:bg-black/30" />
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Password</span>
+          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete="current-password" minLength={6} required placeholder="Minimum 6 characters" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm font-semibold outline-none transition placeholder:text-slate-600 focus:border-indigo-400/60 focus:bg-black/30" />
+        </label>
+        <motion.button whileTap={{ scale: 0.99 }} disabled={loading || !initialized} className="w-full rounded-2xl bg-white px-4 py-3.5 text-sm font-black text-slate-950 shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
+          {loading ? "Signing you in..." : "Sign in"}
+        </motion.button>
+      </form>
+    </AuthShell>
   );
 }
