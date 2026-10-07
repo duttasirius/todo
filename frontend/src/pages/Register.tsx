@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import AuthShell from "../components/AuthShell";
-import { getCurrentUserApi } from "../services/getCurrentUserApi";
-import { registerApi } from "../services/registerApi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   clearAuthError,
@@ -12,6 +11,8 @@ import {
   setAuthLoading,
   setUser,
 } from "../store/authSlice";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function Register() {
   const dispatch = useAppDispatch();
@@ -29,8 +30,11 @@ export default function Register() {
       dispatch(setAuthLoading(true));
 
       try {
-        const response = await getCurrentUserApi();
-        if (active) dispatch(setUser(response.data));
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          withCredentials: true,
+        });
+
+        if (active) dispatch(setUser(response.data.data));
       } catch {
         if (active) dispatch(initializeAuth());
       }
@@ -53,15 +57,20 @@ export default function Register() {
     dispatch(setAuthLoading(true));
 
     try {
-      const response = await registerApi({ name, email, password });
-      dispatch(setUser(response.data));
+      const response = await axios.post(
+        `${API_URL}/api/auth/register`,
+        { name, email, password },
+        { withCredentials: true },
+      );
+
+      dispatch(setUser(response.data.data));
       window.location.assign("/");
     } catch (error) {
-      dispatch(
-        setAuthError(
-          error instanceof Error ? error.message : "Registration failed",
-        ),
-      );
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Registration failed"
+        : "Registration failed";
+
+      dispatch(setAuthError(message));
     }
   };
 
