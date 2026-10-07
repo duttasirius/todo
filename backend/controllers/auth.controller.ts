@@ -94,3 +94,86 @@ export const getMe = async (_req: Request, res: Response) => {
     data: { id: user._id, name: user.name, email: user.email },
   });
 };
+
+
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid email is required",
+    });
+  }
+
+  try {
+    const { requestPasswordReset: requestReset } = await import("../services/password-reset.service.js");
+    await requestReset(email);
+
+    return res.status(200).json({
+      success: true,
+      message: "If an account exists for this email, a reset code has been sent.",
+    });
+  } catch (error) {
+    console.error("Password reset request:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not send the reset code right now.",
+    });
+  }
+};
+
+export const verifyPasswordResetOtp = async (req: Request, res: Response) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const otp = String(req.body?.otp || "").trim();
+
+  if (!email || !email.includes("@") || !/^\\d{6}$/.test(otp)) {
+    return res.status(400).json({
+      success: false,
+      message: "Enter a valid email and 6-digit reset code.",
+    });
+  }
+
+  try {
+    const { verifyPasswordResetOtp: verifyReset } = await import("../services/password-reset.service.js");
+    await verifyReset(email, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: "Reset code verified successfully.",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Invalid or expired reset code",
+    });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "");
+
+  if (!email || !email.includes("@") || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid email and password of at least 6 characters are required.",
+    });
+  }
+
+  try {
+    const { resetPassword: resetUserPassword } = await import("../services/password-reset.service.js");
+    await resetUserPassword(email, password);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully.",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Could not reset password",
+    });
+  }
+};
