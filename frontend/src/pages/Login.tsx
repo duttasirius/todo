@@ -125,6 +125,12 @@ export default function Login() {
           />
         </label>
 
+        <div className="flex justify-end">
+          <a href="/forgot-password.html" className="text-xs font-bold text-indigo-300 hover:text-white">
+            Forgot password?
+          </a>
+        </div>
+
         <motion.button
           whileTap={{ scale: 0.99 }}
           disabled={loading || !initialized}
