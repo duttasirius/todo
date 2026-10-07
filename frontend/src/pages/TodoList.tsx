@@ -185,12 +185,21 @@ export default function TodoList() {
                 Keep every task clear, prioritized and easy to pick back up.
               </p>
             </div>
-            <a
-              href="/create.html"
-              className="inline-flex w-fit rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-100"
-            >
-              + Create a todo
-            </a>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <a
+                href="/create.html?ai=1"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-indigo-300/30 bg-indigo-400/15 px-5 py-3.5 text-sm font-black text-indigo-100 transition hover:-translate-y-0.5 hover:border-indigo-200/50 hover:bg-indigo-400/25 sm:w-auto"
+              >
+                ✨ Create with AI
+              </a>
+              <a
+                href="/create.html"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-100 sm:w-auto"
+              >
+                + Create a todo
+              </a>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -240,9 +249,20 @@ export default function TodoList() {
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
                 Create a task or loosen your filters. Your next win is probably smaller than you think.
               </p>
-              <a href="/create.html" className="mt-6 inline-flex rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">
-                Create your first todo
-              </a>
+              <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+                <a
+                  href="/create.html?ai=1"
+                  className="inline-flex rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-500"
+                >
+                  ✨ Create with AI
+                </a>
+                <a
+                  href="/create.html"
+                  className="inline-flex rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white"
+                >
+                  Create your first todo
+                </a>
+              </div>
             </div>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
