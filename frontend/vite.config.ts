@@ -15,6 +15,7 @@ export default defineConfig({
         register: resolve(root, "register.html"),
         todo: resolve(root, "todo.html"),
         create: resolve(root, "create.html"),
+        forgotPassword: resolve(root, "forgot-password.html"),
       },
     },
   },
