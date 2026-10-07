@@ -9,24 +9,30 @@ React + TypeScript + Vite frontend for the Ziptrrip Todo assignment.
 - Vite
 - Redux Toolkit + React Redux
 - Tailwind CSS
+- Framer Motion
+- Firebase Authentication
 
 ## MPA pages
 
-- `/` — authenticated Todo list
-- `/login.html` — login
-- `/register.html` — register
-- `/todo.html?id=<todoId>` — single Todo details
+- / — authenticated Todo list
+- /login.html — email/password and Google login
+- /register.html — email/password and Google registration
+- /create.html — create a todo manually or with AI
+- /todo.html?id=TODO_ID — single Todo details
+- /forgot-password.html — password reset by email OTP
 
 The app intentionally uses separate HTML entry points and does not use React Router.
 
 ## Features
 
 - Register, login and logout
+- Google authentication through Firebase
 - Authenticated Todo list
 - Create, edit, complete/reopen and delete todos
-- Todo details page using the required `?id=` query parameter
+- Todo details page using the required id query parameter
 - Search, status filter, priority filter and sorting
-- Pagination
+- AI-assisted todo creation
+- Password reset with six-digit email OTP
 - Redux Toolkit state management
 - Tailwind CSS styling
 - HttpOnly-cookie based authentication through the backend
@@ -34,8 +40,8 @@ The app intentionally uses separate HTML entry points and does not use React Rou
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Set `VITE_API_URL` when the backend is not available at `http://localhost:8000`.
+Set VITE_API_URL and the VITE_FIREBASE_* variables in .env when needed.
