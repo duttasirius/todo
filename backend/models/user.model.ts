@@ -6,8 +6,8 @@ export interface IUser extends Document {
   password: string;
   createdAt: Date;
   updatedAt: Date;
-  passwordResetOtpHash?: string;
-  passwordResetOtpExpiresAt?: Date;
+  passwordResetOtpHash?: string | undefined;
+  passwordResetOtpExpiresAt?: Date | undefined;
   passwordResetVerified: boolean;
 }
 
