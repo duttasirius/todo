@@ -1,216 +1,124 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import TodoCard from "../components/TodoCard";
 import TodoFilters from "../components/TodoFilters";
-import TodoForm from "../components/TodoForm";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkAuth } from "../store/authSlice";
-import { createTodo, deleteTodo, fetchTodos, updateTodo } from "../store/todoSlice";
-import type { CreateTodoInput, Todo } from "../types";
-
-const PAGE_SIZE = 6;
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { deleteTodo, fetchTodos, updateTodo } from "../store/todoSlice";
+import type { Todo } from "../types";
 
 export default function TodoList() {
   const dispatch = useAppDispatch();
   const { user, initialized } = useAppSelector((state) => state.auth);
   const { items: todos, loading, error } = useAppSelector((state) => state.todos);
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [sort, setSort] = useState("newest");
-  const [page, setPage] = useState(1);
-  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!initialized) {
-      void dispatch(checkAuth());
-    }
+    if (!initialized) void dispatch(checkAuth());
   }, [dispatch, initialized]);
 
   useEffect(() => {
-    if (initialized && !user) {
-      window.location.href = "/login.html";
-    }
+    if (initialized && !user) window.location.assign("/login.html");
   }, [initialized, user]);
 
   useEffect(() => {
     if (user) void dispatch(fetchTodos());
   }, [dispatch, user]);
 
-  const filteredTodos = useMemo(() => {
-    const rank: Record<Todo["priority"], number> = {
-      high: 3,
-      medium: 2,
-      low: 1,
-    };
+  const visibleTodos = useMemo(() => {
+    const rank: Record<Todo["priority"], number> = { high: 3, medium: 2, low: 1 };
+    const term = search.trim().toLowerCase();
 
     return [...todos]
       .filter((todo) => {
-        const term = search.trim().toLowerCase();
-        const matchesSearch =
-          !term ||
-          todo.title.toLowerCase().includes(term) ||
-          (todo.description || "").toLowerCase().includes(term);
-
-        const matchesStatus =
-          status === "all" ||
-          (status === "completed" ? todo.completed : !todo.completed);
-
-        const matchesPriority =
-          priority === "all" || todo.priority === priority;
-
+        const text = `${todo.title} ${todo.description || ""}`.toLowerCase();
+        const matchesSearch = !term || text.includes(term);
+        const matchesStatus = status === "all" || (status === "completed" ? todo.completed : !todo.completed);
+        const matchesPriority = priority === "all" || todo.priority === priority;
         return matchesSearch && matchesStatus && matchesPriority;
       })
       .sort((a, b) => {
-        if (sort === "oldest") {
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        }
-
-        if (sort === "priority") {
-          return rank[b.priority] - rank[a.priority];
-        }
-
+        if (sort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        if (sort === "priority") return rank[b.priority] - rank[a.priority];
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
   }, [todos, search, status, priority, sort]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTodos.length / PAGE_SIZE));
-  const visibleTodos = filteredTodos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-
-  const handleCreate = async (payload: CreateTodoInput) => {
-    setCreating(true);
-    const result = await dispatch(createTodo(payload));
-    setCreating(false);
-
-    if (createTodo.fulfilled.match(result)) {
-      setPage(1);
-    } else {
-      throw new Error((result.payload as string) || "Could not create todo");
-    }
+  const handleToggle = (todo: Todo) => {
+    void dispatch(updateTodo({ id: todo._id, data: { completed: !todo.completed } }));
   };
 
-  const handleToggle = async (todo: Todo) => {
-    await dispatch(
-      updateTodo({
-        id: todo._id,
-        data: { completed: !todo.completed },
-      }),
-    );
-  };
-
-  const handleUpdate = async (
-    id: string,
-    data: { title?: string; description?: string; priority?: Todo["priority"]; dueDate?: string },
-  ) => {
-    await dispatch(updateTodo({ id, data }));
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this todo?")) return;
-    await dispatch(deleteTodo(id));
+  const handleDelete = (id: string) => {
+    if (window.confirm("Delete this todo?")) void dispatch(deleteTodo(id));
   };
 
   if (!initialized || !user) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-slate-50 text-slate-500">
-        Checking your session...
-      </main>
-    );
+    return <main className="grid min-h-screen place-items-center bg-[#f6f7fb] text-sm font-semibold text-slate-400">Checking your session…</main>;
   }
 
-  const completedCount = todos.filter((todo) => todo.completed).length;
-  const activeCount = todos.length - completedCount;
+  const completed = todos.filter((todo) => todo.completed).length;
+  const active = todos.length - completed;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[#f6f7fb] text-slate-900">
       <Navbar user={user} />
-
-      <main className="mx-auto w-[min(1120px,calc(100%-32px))] py-8 sm:py-12">
-        <section className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-indigo-600">Your workspace</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">My todos</h1>
-            <p className="mt-2 text-slate-500">
-              {activeCount} active · {completedCount} completed
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold shadow-sm ring-1 ring-slate-200">
-            {todos.length} total
-          </div>
-        </section>
-
-        <TodoForm onCreate={handleCreate} busy={creating} />
-
-        {error && (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="mt-5">
-          <TodoFilters
-            search={search}
-            status={status}
-            priority={priority}
-            sort={sort}
-            onSearch={(value) => { setSearch(value); setPage(1); }}
-            onStatus={(value) => { setStatus(value); setPage(1); }}
-            onPriority={(value) => { setPriority(value); setPage(1); }}
-            onSort={(value) => { setSort(value); setPage(1); }}
-          />
-        </div>
-
-        <section className="mt-5 space-y-3">
-          {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
-              Loading todos...
-            </div>
-          ) : visibleTodos.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-              <h2 className="text-lg font-bold">No todos found</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Create a todo or change your filters.
+      <main className="mx-auto w-[min(1180px,calc(100%-32px))] py-8 sm:py-12">
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-7 text-white shadow-2xl shadow-slate-300/40 sm:p-9">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-300">Your task space</p>
+              <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl">Make progress visible.</h1>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+                Keep every task clear, prioritized and easy to pick back up.
               </p>
             </div>
+            <a href="/create.html" className="inline-flex w-fit rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-100">+ Create a todo</a>
+          </div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            {[
+              ["Total tasks", todos.length.toString()],
+              ["Active", active.toString()],
+              ["Completed", completed.toString()],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+                <p className="mt-1 text-2xl font-black">{value}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        <div className="mt-6">
+          <TodoFilters search={search} status={status} priority={priority} sort={sort}
+            onSearch={setSearch} onStatus={setStatus} onPriority={setPriority} onSort={setSort} />
+        </div>
+
+        {error && <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
+
+        <section className="mt-5">
+          {loading ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[1,2,3,4].map((item) => <div key={item} className="h-48 animate-pulse rounded-2xl bg-white ring-1 ring-slate-200" />)}
+            </div>
+          ) : visibleTodos.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
+              <p className="text-4xl">✓</p>
+              <h2 className="mt-4 text-xl font-black">Nothing here yet.</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Create a task or loosen your filters. Your next win is probably smaller than you think.</p>
+              <a href="/create.html" className="mt-6 inline-flex rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Create your first todo</a>
+            </div>
           ) : (
-            visibleTodos.map((todo) => (
-              <TodoCard
-                key={todo._id}
-                todo={todo}
-                onToggle={handleToggle}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-              />
-            ))
+            <div className="grid gap-3 md:grid-cols-2">
+              {visibleTodos.map((todo) => (
+                <TodoCard key={todo._id} todo={todo} onToggle={handleToggle} onDelete={handleDelete} />
+              ))}
+            </div>
           )}
         </section>
-
-        {filteredTodos.length > 0 && (
-          <div className="mt-6 flex items-center justify-center gap-4">
-            <button
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={page === 1}
-              onClick={() => setPage((value) => value - 1)}
-            >
-              Previous
-            </button>
-            <span className="text-sm font-semibold text-slate-600">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={page === totalPages}
-              onClick={() => setPage((value) => value + 1)}
-            >
-              Next
-            </button>
-          </div>
-        )}
       </main>
     </div>
   );
