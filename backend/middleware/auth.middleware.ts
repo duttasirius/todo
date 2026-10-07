@@ -2,14 +2,16 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "../types/auth.types.js";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined");
-}
-
 export const protect = (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies?.token;
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    return res.status(500).json({
+      success: false,
+      message: "JWT_SECRET is not configured",
+    });
+  }
 
   if (!token) {
     return res.status(401).json({
@@ -19,7 +21,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
     res.locals.userId = decoded.userId;
     next();
   } catch {
