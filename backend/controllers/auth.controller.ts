@@ -2,6 +2,11 @@ import type { Request, Response } from "express";
 import { User } from "../models/user.model.js";
 import { loginUser, registerUser } from "../services/auth.service.js";
 import { generateToken } from "../utils/generate-token.js";
+import {
+  requestPasswordReset as sendResetCode,
+  verifyPasswordResetOtp as verifyResetCode,
+  resetPassword as resetUserPassword,
+} from "../services/password-reset.service.js";
 
 const setAuthCookie = (res: Response, token: string) => {
   res.cookie("token", token, {
@@ -107,8 +112,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
   }
 
   try {
-    const { requestPasswordReset: requestReset } = await import("../services/password-reset.service.js");
-    await requestReset(email);
+    await sendResetCode(email);
 
     return res.status(200).json({
       success: true,
@@ -136,8 +140,7 @@ export const verifyPasswordResetOtp = async (req: Request, res: Response) => {
   }
 
   try {
-    const { verifyPasswordResetOtp: verifyReset } = await import("../services/password-reset.service.js");
-    await verifyReset(email, otp);
+    await verifyResetCode(email, otp);
 
     return res.status(200).json({
       success: true,
@@ -163,7 +166,6 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 
   try {
-    const { resetPassword: resetUserPassword } = await import("../services/password-reset.service.js");
     await resetUserPassword(email, password);
 
     return res.status(200).json({
