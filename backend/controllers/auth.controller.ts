@@ -132,7 +132,7 @@ export const verifyPasswordResetOtp = async (req: Request, res: Response) => {
   const email = String(req.body?.email || "").trim().toLowerCase();
   const otp = String(req.body?.otp || "").trim();
 
-  if (!email || !email.includes("@") || !/^\\d{6}$/.test(otp)) {
+  if (!email || !email.includes("@") || !/^\d{6}$/.test(otp)) {
     return res.status(400).json({
       success: false,
       message: "Enter a valid email and 6-digit reset code.",
