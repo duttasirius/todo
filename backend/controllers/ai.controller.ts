@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
+
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const getToday = () =>
+const getToday = (): string =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
@@ -11,7 +12,7 @@ const getToday = () =>
     day: "2-digit",
   }).format(new Date());
 
-const cleanJson = (text: string) =>
+const cleanJson = (text: string): string =>
   text
     .replace(/^\s*```json\s*/i, "")
     .replace(/\s*```\s*$/i, "")
@@ -54,15 +55,16 @@ Return ONLY JSON using this exact structure:
   "title": "short clear title",
   "description": "useful short description",
   "priority": "low",
-  "dueDate": "YYYY-MM-DD"
+  "dueDate": ""
 }
 
 Rules:
-- priority must be exactly low, medium, or high.
-- dueDate must be YYYY-MM-DD or null.
-- Use today's date as ${today}.
+- priority must be exactly "low", "medium", or "high".
+- dueDate must be either a valid date in YYYY-MM-DD format or an empty string "".
+- Today's date is ${today}.
 - Interpret words such as today, tomorrow, next week, or this Friday relative to today's date.
-- Do not invent a due date when the user did not provide one. Use null.
+- Do not invent a due date when the user did not provide one.
+- Use an empty string "" when no due date is specified.
 - Keep the title concise.
 - Keep the description useful but short.
 - Return JSON only.
@@ -81,7 +83,11 @@ ${prompt}`;
         contents: [
           {
             role: "user",
-            parts: [{ text: instruction }],
+            parts: [
+              {
+                text: instruction,
+              },
+            ],
           },
         ],
         generationConfig: {
@@ -101,7 +107,7 @@ ${prompt}`;
                 enum: ["low", "medium", "high"],
               },
               dueDate: {
-                type: ["STRING", "NULL"],
+                type: "STRING",
               },
             },
             required: ["title", "description", "priority", "dueDate"],
@@ -113,6 +119,7 @@ ${prompt}`;
 
     if (!response.ok) {
       const errorBody = await response.text();
+
       console.error("Gemini request failed:", response.status, errorBody);
 
       return res.status(502).json({
@@ -137,13 +144,22 @@ ${prompt}`;
     if (
       typeof todo.title !== "string" ||
       typeof todo.description !== "string" ||
-      !["low", "medium", "high"].includes(todo.priority)
+      typeof todo.priority !== "string" ||
+      typeof todo.dueDate !== "string"
     ) {
-      throw new Error("Invalid Gemini todo response");
+      throw new Error("Invalid Gemini Todo response");
     }
 
-    if (todo.dueDate !== null && typeof todo.dueDate !== "string") {
+    if (!["low", "medium", "high"].includes(todo.priority)) {
+      throw new Error("Invalid Gemini priority");
+    }
+
+    if (todo.dueDate !== "" && !/^\d{4}-\d{2}-\d{2}$/.test(todo.dueDate)) {
       throw new Error("Invalid Gemini due date");
+    }
+
+    if (!todo.title.trim()) {
+      throw new Error("Gemini returned an empty title");
     }
 
     return res.status(200).json({
@@ -152,7 +168,7 @@ ${prompt}`;
         title: todo.title.trim(),
         description: todo.description.trim(),
         priority: todo.priority,
-        dueDate: todo.dueDate,
+        dueDate: todo.dueDate.trim(),
       },
     });
   } catch (error) {
@@ -160,7 +176,8 @@ ${prompt}`;
 
     return res.status(500).json({
       success: false,
-      message: "Could not generate the Todo with AI. You can still create it manually.",
+      message:
+        "Could not generate the Todo with AI. You can still create it manually.",
     });
   }
 };
