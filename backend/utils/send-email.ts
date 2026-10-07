@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
-  const user = process.env.USER_EMAIL;
-  const pass = process.env.USER_PASSWORD?.replace(/\s+/g, "");
+  const user = process.env.EMAIL;
+  const pass = process.env.EMAIL_PASS?.replace(/\s+/g, "");
 
   if (!user || !pass) {
-    throw new Error("USER_EMAIL and USER_PASSWORD are required for email sending");
+    throw new Error("EMAIL and EMAIL_PASS are required for email sending");
   }
 
   return nodemailer.createTransport({
@@ -24,7 +24,7 @@ export const sendPasswordResetOtp = async (
   const from = process.env.USER_EMAIL;
 
   if (!from) {
-    throw new Error("USER_EMAIL is not configured");
+    throw new Error("EMAIL is not configured");
   }
 
   const transporter = createTransporter();
