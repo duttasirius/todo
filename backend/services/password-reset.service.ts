@@ -23,6 +23,7 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
   user.passwordResetOtpHash = otpHash;
   user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_TTL_MS);
   user.passwordResetVerified = false;
+  await user.save();
 
   try {
     await sendPasswordResetOtp(normalizedEmail, otp);
