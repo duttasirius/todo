@@ -93,3 +93,12 @@ Content-Type: application/json
 
 ### Error - Invalid Todo ID
 GET {{baseUrl}}/todos/not-a-valid-id
+
+
+### AI Generate Todo
+POST {{baseUrl}}/ai/todo
+Content-Type: application/json
+
+{
+  "prompt": "Finish the backend assignment tomorrow and make it high priority. Mention Postman testing."
+}
