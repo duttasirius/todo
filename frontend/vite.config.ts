@@ -14,6 +14,7 @@ export default defineConfig({
         login: resolve(root, "login.html"),
         register: resolve(root, "register.html"),
         todo: resolve(root, "todo.html"),
+        create: resolve(root, "create.html"),
       },
     },
   },
